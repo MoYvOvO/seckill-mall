@@ -164,17 +164,7 @@ sequenceDiagram
         S->>DB: INSERT order (paid)
     end
 
-    classDef client fill:#3B82F6,stroke:#2563EB,color:#fff
-    classDef gateway fill:#F59E0B,stroke:#D97706,color:#fff
-    classDef service fill:#10B981,stroke:#059669,color:#fff
-    classDef queue fill:#06B6D4,stroke:#0891B2,color:#fff
-    classDef data fill:#8B5CF6,stroke:#7C3AED,color:#fff
-
-    class C client
-    class G gateway
-    class O,S,P service
-    class M queue
-    class R,DB data
+  
 ```
 
 ## 配置
