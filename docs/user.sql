@@ -1,0 +1,3 @@
+INSERT INTO `user`(`id`, `username`, `password`, `nickname`, `status`, `created_at`, `updated_at`, `role`, `is_deleted`) VALUES (1, '123', '123', '123', 1, '2026-05-25 19:53:42', '2026-07-31 13:39:59', 'user', 0);
+INSERT INTO `user`(`id`, `username`, `password`, `nickname`, `status`, `created_at`, `updated_at`, `role`, `is_deleted`) VALUES (3, 'admin', '123456', 'admin', 1, '2026-06-16 11:34:02', '2026-07-31 13:39:52', 'admin', 0);
+INSERT INTO `user`(`id`, `username`, `password`, `nickname`, `status`, `created_at`, `updated_at`, `role`, `is_deleted`) VALUES (4, '1234', '123456', '1234', 1, '2026-07-31 13:50:22', '2026-07-31 13:50:22', 'user', 0);
