@@ -18,6 +18,7 @@ import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>
@@ -41,6 +43,8 @@ import java.util.Map;
 @Service
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements OrderService {
     private static final String STOCK_KEY_PREFIX = "seckill:stock:";
+    @Value("${idempotent.enabled:true}")
+    private boolean idempotentEnabled;
     @Autowired
     private OrderMapper orderMapper;
     @Autowired
@@ -72,7 +76,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         System.out.println("解析出的 role: " + role);
         System.out.println("解析出的 userId: " + userId);
         if ("admin".equals(role)) {
-
+           //admin 能看到所有订单
         } else {
             queryWrapper.eq("user_id", userId);
         }
@@ -96,28 +100,40 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     @Override
     @Transactional
     public Map createOrder(String userId, String productId) {
+        if (idempotentEnabled) {
+            String orderKey = "order:user:" + userId + ":product:" + productId;
+            Boolean hasOrder = redisTemplate.opsForValue().setIfAbsent(orderKey, "1", 3600, TimeUnit.SECONDS);
+
+            if (hasOrder == null || !hasOrder) {
+                log.warn("用户 {} 已购买过商品 {}，重复下单被拦截", userId, productId);
+                throw new RuntimeException("您已购买过该商品，每人限购一件");
+            }
+            log.info("用户 {} 首次购买商品 {}，幂等校验通过", userId, productId);
+        } else {
+            log.info("幂等校验已关闭，当前为压测模式");
+        }
+
         String stockKey = STOCK_KEY_PREFIX + productId;
-        // DECR 是原子操作，返回值是扣减后的库存数量
         Long remainingStock = redisTemplate.opsForValue().decrement(stockKey);
         log.info("用户 {} 秒杀商品 {}，扣减后剩余库存：{}", userId, productId, remainingStock);
 
-        // ========== 第二步：判断是否库存不足 ==========
         if (remainingStock == null || remainingStock < 0) {
-            // 库存不足，回滚 Redis（加回库存）
             if (remainingStock != null) {
                 redisTemplate.opsForValue().increment(stockKey);
+            }
+            if (idempotentEnabled) {
+                String orderKey = "order:user:" + userId + ":product:" + productId;
+                redisTemplate.delete(orderKey);
             }
             log.warn("用户 {} 秒杀商品 {} 失败：库存不足", userId, productId);
             throw new RuntimeException("商品已售罄");
         }
 
-        // ========== 第三步：扣减成功后，异步同步到 MySQL ==========
         stockSyncService.syncStockToDB(productId, 1);
         Map<String, String> orderMessage = new HashMap<>();
         orderMessage.put("userId", userId);
         orderMessage.put("username", userId);
         orderMessage.put("productId", productId);
-
 
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.SECKILL_EXCHANGE,
@@ -127,7 +143,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
         log.info("用户 {} 秒杀商品 {}，订单消息已发送到 MQ", userId, productId);
 
-        // 4. 返回排队中的订单
+        // 第四步：返回排队中的订单
         Order order = new Order();
         order.setUserId(userId);
         order.setProductId(productId);
@@ -135,34 +151,5 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         Map<String, Object> data = new HashMap<>();
         data.put("order", order);
         return data;
-//        // ========== 第四步：调用 product-service 查询商品信息 ==========
-//        Result<Product> productResult = productFeignClient.getProductById(productId);
-//        if (productResult == null || productResult.getCode() != 200 || productResult.getData() == null) {
-//            // 如果查询失败，回滚 Redis 库存
-//            redisTemplate.opsForValue().increment(stockKey);
-//            log.error("用户 {} 秒杀商品 {} 失败：商品信息查询失败", userId, productId);
-//            throw new RuntimeException("商品信息不存在");
-//        }
-//        Product product = productResult.getData();
-//        // 3. 生成订单号
-//        String orderNo = "o" + System.currentTimeMillis() + (int)(Math.random() * 1000);
-//        // 4. 创建订单对象
-//        Order order = new Order();
-//        order.setUserId(userId);
-//        order.setProductId(productId);
-//        order.setAmount(product.getSeckillPrice() != null ? product.getSeckillPrice() : product.getPrice());
-//        order.setStatus("paid");
-//        order.setProductName(product.getName());
-//        order.setCreateTime(LocalDateTime.now());
-//        order.setId(orderNo);
-//        order.setUsername(userId);
-//        order.setCreatedAt(LocalDateTime.now());
-//        order.setUpdatedAt(LocalDateTime.now());
-//        orderMapper.insert(order);
-//
-//        Map<String, Object> data = new HashMap<>();
-//        data.put("order", order);
-//        data.put("product", product);
-//        return data;
     }
 }

@@ -22,7 +22,7 @@ Thumbs.db
 # 敏感配置
 **/application-dev.properties
 **/application-prod.properties
-**/application-*.properties
+
 
 # Maven
 .m2/

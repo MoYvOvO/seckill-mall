@@ -39,7 +39,7 @@ public class OrderController {
     public Result CreateseckillOrder(@RequestBody Map map) {
         String UserName= (String) map.get("username");
         String ProductId= (String) map.get("productId");
-      //  System.out.println("UserName=  "+UserName+"ProductId=   "+ProductId);
+
         log.info("UserName={}  ProductId={}",UserName,ProductId);
         return  Result.success( orderService.createOrder(UserName,ProductId));
     }

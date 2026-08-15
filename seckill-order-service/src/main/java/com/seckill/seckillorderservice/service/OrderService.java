@@ -1,5 +1,6 @@
 package com.seckill.seckillorderservice.service;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.seckill.seckillcommon.dto.Result;
 import com.seckill.seckillcommon.entity.Order;
 import java.util.Map;
 

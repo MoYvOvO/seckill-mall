@@ -35,7 +35,7 @@
 | 异步创建订单 | 扣减成功后向 `seckill.order.queue` 发送消息，RabbitMQ 消费者创建已支付订单。 |
 | Feign 库存同步 | 订单服务异步调用 `product-service`，以 `stock >= quantity` 条件同步扣减 MySQL 库存。 |
 | JWT 鉴权 | 登录签发 24 小时 Token；用户信息和订单查询需要 Bearer Token，admin 角色可查看全部订单。 |
-
+| 接口幂等性 | 基于 Redis `SET NX` 实现下单幂等，Key 为 `order:user:{userId}:product:{productId}`，防止同一用户重复购买同一商品；支持通过 `idempotent.enabled` 配置开关，压测环境一键关闭。 |
 ## 快速开始
 ### 依赖服务
 - **Agent 服务**：提供 AI 对话能力，独立项目 [agent-service]
