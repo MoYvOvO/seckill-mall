@@ -40,6 +40,8 @@
 ### 依赖服务
 - **Agent 服务**：提供 AI 对话能力，独立项目 [agent-service]
     https://github.com/MoYvOvO/agent-service，需先启动。
+    
+  **前端**：秒杀商城配套前端，独立项目 [seckill-frontend] https://github.com/MoYvOvO/seckill-frontend
 ### 环境要求
 
 - JDK 17
