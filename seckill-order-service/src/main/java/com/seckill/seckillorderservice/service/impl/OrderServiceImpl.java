@@ -73,8 +73,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         String role = claims.get("role", String.class);
         Map<String, Object> result = new HashMap<>();
         QueryWrapper<Order> queryWrapper = new QueryWrapper<>();
-        System.out.println("解析出的 role: " + role);
-        System.out.println("解析出的 userId: " + userId);
         if ("admin".equals(role)) {
            //admin 能看到所有订单
         } else {

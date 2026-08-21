@@ -7,6 +7,7 @@ import com.seckill.seckillorderservice.mapper.OrderMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,7 +20,8 @@ public class Consumer {
 
     @Autowired
     private OrderMapper orderMapper;
-
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
     @Autowired
     private ProductFeignClient productFeignClient;
 
@@ -59,5 +61,17 @@ public class Consumer {
         } catch (Exception e) {
             log.error("订单消费失败：{}", e.getMessage(), e);
         }
+    }
+    @RabbitListener(queues = "seckill.dlx.queue")
+    public void handleTimeoutOrder(Map<String, String> message) {
+        String userId = message.get("userId");
+        String productId = message.get("productId");
+        log.info("收到超时订单消息：userId={}, productId={}", userId, productId);
+        String stockKey = "seckill:stock:" + productId;
+        Long currentStock = redisTemplate.opsForValue().increment(stockKey);
+        log.info("已恢复库存：productId={}, 当前库存={}", productId, currentStock);
+        String orderKey = "order:user:" + userId + ":product:" + productId;
+        redisTemplate.delete(orderKey);
+        log.info("已删除幂等Key：{}", orderKey);
     }
 }
