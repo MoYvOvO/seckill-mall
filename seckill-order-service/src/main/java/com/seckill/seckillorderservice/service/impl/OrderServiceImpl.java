@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.seckill.seckillcommon.dto.Result;
 import com.seckill.seckillcommon.entity.Order;
 import com.seckill.seckillcommon.entity.Product;
+import com.seckill.seckillorderservice.Exception.SeckillException;
 import com.seckill.seckillorderservice.Feign.ProductFeignClient;
 import com.seckill.seckillorderservice.config.RabbitMQConfig;
 import com.seckill.seckillorderservice.mapper.OrderMapper;
@@ -97,14 +98,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
 
     @Override
     @Transactional
-    public Map createOrder(String userId, String productId) {
+    public Result createOrder(String userId, String productId) {
         if (idempotentEnabled) {
             String orderKey = "order:user:" + userId + ":product:" + productId;
             Boolean hasOrder = redisTemplate.opsForValue().setIfAbsent(orderKey, "1", 3600, TimeUnit.SECONDS);
 
             if (hasOrder == null || !hasOrder) {
                 log.warn("用户 {} 已购买过商品 {}，重复下单被拦截", userId, productId);
-                throw new RuntimeException("您已购买过该商品，每人限购一件");
+//                throw new SeckillException(400, "您已购买过该商品，每人限购一件");
+               return Result.error(400,"您已购买过该商品，每人限购一件");
             }
             log.info("用户 {} 首次购买商品 {}，幂等校验通过", userId, productId);
         } else {
@@ -124,7 +126,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 redisTemplate.delete(orderKey);
             }
             log.warn("用户 {} 秒杀商品 {} 失败：库存不足", userId, productId);
-            throw new RuntimeException("商品已售罄");
+//            throw new SeckillException(400, "商品已售罄");
+           return Result.error(400,"商品已售罄");
         }
 
         stockSyncService.syncStockToDB(productId, 1);
@@ -148,6 +151,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setStatus("pending");
         Map<String, Object> data = new HashMap<>();
         data.put("order", order);
-        return data;
+        return Result.success(data);
     }
 }

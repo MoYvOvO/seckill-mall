@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public interface OrderService extends IService<Order> {
     void SetStatus(String orderid, String status);
-    Map createOrder(String userId, String productId);
+    Result createOrder(String userId, String productId);
     Map getinfo(String authHeader);
 
 }
