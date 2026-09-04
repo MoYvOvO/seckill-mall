@@ -42,6 +42,9 @@
 		<spring-cloud-alibaba.version>2025.0.0.0</spring-cloud-alibaba.version>
 		<mybatis-plus.version>3.5.16</mybatis-plus.version>
 		<kotlin.version>2.1.0</kotlin.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven.compiler.encoding>UTF-8</maven.compiler.encoding>
 	</properties>
 
 	<dependencyManagement>
@@ -95,4 +98,17 @@
 		<module>seckill-order-service</module>
 		<module>seckill-gateway</module>
 	</modules>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.3.1</version>
+				<configuration>
+					<encoding>UTF-8</encoding>
+					<useDefaultDelimiters>false</useDefaultDelimiters>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>

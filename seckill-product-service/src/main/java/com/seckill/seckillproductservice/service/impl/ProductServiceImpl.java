@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * <p>
@@ -33,6 +34,9 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
     @Override
     public boolean save(Product product) {
+        if (product.getId() == null || product.getId().isBlank()) {
+            product.setId("p" + UUID.randomUUID().toString().replace("-", "").substring(0, 8));
+        }
         productMapper.insert(product);
         return true;
     }

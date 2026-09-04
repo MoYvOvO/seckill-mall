@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Map;
+
 @FeignClient(name = "product-service")
 public interface ProductFeignClient {
 
@@ -16,4 +18,6 @@ public interface ProductFeignClient {
     Result<Void> deductStock(@PathVariable("productId") String productId, @RequestParam("quantity") Integer quantity);
     @GetMapping("/api/products/{productId}/stock")
     Result<Integer> getProductStock(@PathVariable("productId") String productId);
+    @GetMapping("/api/products")
+    Result<Map<String, Object>> getAllProducts();
 }
