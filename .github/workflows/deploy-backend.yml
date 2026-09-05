@@ -3,9 +3,7 @@ name: Deploy Backend
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - 'seckill-*-service/**'
-      - 'pom.xml'
+ 
 
 jobs:
   build-and-deploy:
