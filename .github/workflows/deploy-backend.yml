@@ -29,7 +29,7 @@ jobs:
 
       - name: Upload jars via scp
         run: |
-          sshpass -p "${{ secrets.PASSWORD }}" scp -P ${{ secrets.PORT }} \
+          sshpass -p "${{ secrets.PASSWORD }}" scp -o StrictHostKeyChecking=no -P ${{ secrets.PORT }} \
             ./seckill-user-service/target/*.jar \
             ./seckill-product-service/target/*.jar \
             ./seckill-order-service/target/*.jar \
@@ -37,16 +37,12 @@ jobs:
             ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/root/
 
       - name: Restart Services via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: ${{ secrets.PORT }}
-          script: |
+        run: |
+          sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
             ps -ef | grep -E "user-service|product-service|order-service|gateway" | grep -v grep | awk '{print $2}' | xargs kill -9 || true
             cd /root
             nohup java -jar seckill-user-service-0.0.1-SNAPSHOT.jar > user.log 2>&1 &
             nohup java -jar seckill-product-service-0.0.1-SNAPSHOT.jar > product.log 2>&1 &
             nohup java -jar seckill-order-service-0.0.1-SNAPSHOT.jar > order.log 2>&1 &
             nohup java -jar seckill-gateway-0.0.1-SNAPSHOT.jar > gateway.log 2>&1 &
+          EOF
