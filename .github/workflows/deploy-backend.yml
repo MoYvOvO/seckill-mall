@@ -3,7 +3,6 @@ name: Deploy Backend
 on:
   push:
     branches: [ "main" ]
- 
 
 jobs:
   build-and-deploy:
@@ -22,19 +21,29 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Deploy to Server via SCP & SSH
-        uses: cross-the-world/ssh-scp-ssh-pipelines@latest
+      - name: Upload jar to Server via SCP
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST }}
-          user: ${{ secrets.USERNAME }}
-          pass: ${{ secrets.PASSWORD }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
           port: ${{ secrets.PORT }}
-          scp: |
-            ./seckill-user-service/target/*.jar => /root/
-            ./seckill-product-service/target/*.jar => /root/
-            ./seckill-order-service/target/*.jar => /root/
-            ./seckill-gateway/target/*.jar => /root/
-          last_ssh: |
+          source: |
+            ./seckill-user-service/target/*.jar
+            ./seckill-product-service/target/*.jar
+            ./seckill-order-service/target/*.jar
+            ./seckill-gateway/target/*.jar
+          target: /root/
+          strip_components: 3
+
+      - name: Restart Services via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: |
             ps -ef | grep -E "user-service|product-service|order-service|gateway" | grep -v grep | awk '{print $2}' | xargs kill -9 || true
             cd /root
             nohup java -jar seckill-user-service-0.0.1-SNAPSHOT.jar > user.log 2>&1 &
