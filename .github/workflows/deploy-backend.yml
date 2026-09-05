@@ -21,20 +21,20 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: Upload jar to Server via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: ${{ secrets.PORT }}
-          source: |
-            ./seckill-user-service/target/*.jar
-            ./seckill-product-service/target/*.jar
-            ./seckill-order-service/target/*.jar
-            ./seckill-gateway/target/*.jar
-          target: /root/
-          
+      - name: List jar files (debug)
+        run: ls -la ./seckill-*-service/target/*.jar
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Upload jars via scp
+        run: |
+          sshpass -p "${{ secrets.PASSWORD }}" scp -P ${{ secrets.PORT }} \
+            ./seckill-user-service/target/*.jar \
+            ./seckill-product-service/target/*.jar \
+            ./seckill-order-service/target/*.jar \
+            ./seckill-gateway/target/*.jar \
+            ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/root/
 
       - name: Restart Services via SSH
         uses: appleboy/ssh-action@v1.0.3
